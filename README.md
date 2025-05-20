@@ -45,7 +45,7 @@ HappyDebugger is a modern, full-featured online code editor and execution platfo
 
 1. Clone the repository
 ```bash
-git clone [your-repo-url]
+git clone https://github.com/amishaa033/HappyDebugger.git
 cd p1
 ```
 
