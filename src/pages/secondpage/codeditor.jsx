@@ -86,43 +86,79 @@ const CodeEditor = forwardRef(({ setOutputValue, inputValue, code }, ref) => {
   };
 
   const handleRun = async () => {
-    setIsRunning(true);
-    setOutputValue("Running...");
-    try {
-      const langInfo = languageToPiston[language];
-      if (!langInfo) {
-        setOutputValue("Unsupported language for Piston API.");
-        setIsRunning(false);
-        return;
-      }
-      const res = await fetch(`${PISTON_BASE_URL}/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: langInfo.language,
-          version: langInfo.version,
-          files: [{ name: langInfo.filename, content: editorCode }],
-          stdin: inputValue || ""
-        })
-      });
-      if (!res.ok) {
-        setOutputValue(`Error: ${res.status} ${res.statusText}`);
-        setIsRunning(false);
-        return;
-      }
-      const result = await res.json();
-      setOutputValue(
-        (result.run && result.run.stdout) ? result.run.stdout :
-        (result.run && result.run.stderr) ? result.run.stderr :
-        (result.compile && result.compile.stdout) ? result.compile.stdout :
-        (result.compile && result.compile.stderr) ? result.compile.stderr :
-        "No output"
-      );
-    } catch (err) {
-      setOutputValue("Error: " + err.message);
-    }
-    setIsRunning(false);
+  setIsRunning(true);
+  setOutputValue("Running...");
+
+  if (language === "Javascript") {
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  let outputLogs = "";
+  const originalConsoleLog = iframe.contentWindow.console.log;
+  iframe.contentWindow.console.log = function (...args) {
+    outputLogs += args.join(" ") + "\n";
+    originalConsoleLog.apply(this, args);
   };
+
+  iframe.contentWindow.alert = (msg) => window.alert(msg);
+  iframe.contentWindow.prompt = (msg, defaultVal = "") => window.prompt(msg, defaultVal);
+
+  try {
+    iframe.contentWindow.eval(editorCode);
+    setOutputValue(outputLogs || "Program executed. Check alerts/prompts.");
+  } catch (err) {
+    setOutputValue("Error: " + err.message);
+  }
+
+  document.body.removeChild(iframe);
+  setIsRunning(false);
+  return;
+}
+
+
+  // For other languages – use Piston API
+  try {
+    const langInfo = languageToPiston[language];
+    if (!langInfo) {
+      setOutputValue("Unsupported language for Piston API.");
+      setIsRunning(false);
+      return;
+    }
+
+    const res = await fetch(`${PISTON_BASE_URL}/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        language: langInfo.language,
+        version: langInfo.version,
+        files: [{ name: langInfo.filename, content: editorCode }],
+        stdin: inputValue || ""
+      })
+    });
+
+    if (!res.ok) {
+      setOutputValue(`Error: ${res.status} ${res.statusText}`);
+      setIsRunning(false);
+      return;
+    }
+
+    const result = await res.json();
+
+    setOutputValue(
+      (result.run && result.run.stdout) ? result.run.stdout :
+      (result.run && result.run.stderr) ? result.run.stderr :
+      (result.compile && result.compile.stdout) ? result.compile.stdout :
+      (result.compile && result.compile.stderr) ? result.compile.stderr :
+      "No output"
+    );
+  } catch (err) {
+    setOutputValue("Error: " + err.message);
+  }
+
+  setIsRunning(false);
+};
+
 
   // Expose handleRun to parent via ref
   useImperativeHandle(ref, () => ({
