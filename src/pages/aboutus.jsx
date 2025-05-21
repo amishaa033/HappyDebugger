@@ -22,7 +22,8 @@ export default function AboutUs() {
           <hr className="w-16 border-t border-white mx-auto md:mx-0" />
           <p className="text-gray-300 text-sm md:text-base leading-relaxed max-w-md mx-auto md:mx-0">
             HappyDebugger
-            Fix bugs, have fun, and debug your way to glory! Happy-Debugger is the ultimate playground for freshers to test their logic, spot errors, and smile through the code chaos. Debugging has never been this exciting!
+            Fix bugs, have fun, and debug your way to glory! Happy-Debugger is the ultimate playground for freshers to test their logic, spot errors,
+            and smile through the code chaos. Debugging has never been this exciting!
           </p>
           <div className="space-y-4 flex flex-col items-center md:items-start">
             <button 
